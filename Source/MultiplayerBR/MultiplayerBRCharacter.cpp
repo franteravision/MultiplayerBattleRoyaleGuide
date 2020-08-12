@@ -8,6 +8,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "AbilitySystemComponent.h"
+#include "MBR_AttributeSet.h"
+#include "MBR_GameplayAbility.h"
+
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiplayerBRCharacter
@@ -45,6 +49,35 @@ AMultiplayerBRCharacter::AMultiplayerBRCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("Ability System Component"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
+
+	AttributeSet = CreateDefaultSubobject<UMBR_AttributeSet>(TEXT("Attribute Set"));
+
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (GetLocalRole() == ROLE_Authority && IsValid(AbilitySystemComponent))
+	{
+		for (TSubclassOf<UMBR_GameplayAbility>& currentAbility : StartingAbilities)
+		{
+			if (IsValid(currentAbility))
+			{
+				UMBR_GameplayAbility* defaultObj = currentAbility->GetDefaultObject<UMBR_GameplayAbility>();
+				AbilitySystemComponent->GiveAbility(
+					FGameplayAbilitySpec(defaultObj, 1, static_cast<int32>(defaultObj->AbilityInputID), this)
+				);
+			}
+		}
+
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -74,36 +107,58 @@ void AMultiplayerBRCharacter::SetupPlayerInputComponent(class UInputComponent* P
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMultiplayerBRCharacter::OnResetVR);
+
+	// set up ASC input bindings
+	AbilitySystemComponent->BindAbilityActivationToInputComponent(
+		PlayerInputComponent,
+		FGameplayAbilityInputBinds(
+			"Confirm",
+			"Cancel",
+			"EMBR_AbilityInputID",
+			static_cast<int32>(EMBR_AbilityInputID::Confirm),
+			static_cast<int32>(EMBR_AbilityInputID::Cancel)
+		));
 }
 
+//=====================================================================================================================
+UAbilitySystemComponent* AMultiplayerBRCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::OnResetVR()
 {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
 		Jump();
 }
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 		StopJumping();
 }
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 }
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::LookUpAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
@@ -118,6 +173,7 @@ void AMultiplayerBRCharacter::MoveForward(float Value)
 	}
 }
 
+//=====================================================================================================================
 void AMultiplayerBRCharacter::MoveRight(float Value)
 {
 	if ( (Controller != NULL) && (Value != 0.0f) )

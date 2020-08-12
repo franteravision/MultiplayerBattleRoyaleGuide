@@ -4,10 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
 #include "MultiplayerBRCharacter.generated.h"
 
+class UGameplayAbility;
+class UAbilitySystemComponent;
+class UMBR_AttributeSet;
+class UMBR_GameplayAbility;
+
 UCLASS(config=Game)
-class AMultiplayerBRCharacter : public ACharacter
+class AMultiplayerBRCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -18,6 +24,8 @@ class AMultiplayerBRCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	virtual void BeginPlay() override;
 public:
 	AMultiplayerBRCharacter();
 
@@ -68,5 +76,21 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	/* --- Gameplay Ability System Start --- */
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gameplay Ability System")
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gameplay Ability System")
+	UMBR_AttributeSet* AttributeSet;
+
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Ability System")
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+	UPROPERTY(EditAnywhere, Category = "Gameplay Abilities")
+	TArray<TSubclassOf<UMBR_GameplayAbility>> StartingAbilities;
+
+	/* --- Gameplay Ability System End --- */
 };
 
