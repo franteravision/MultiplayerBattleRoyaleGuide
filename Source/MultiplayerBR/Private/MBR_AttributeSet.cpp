@@ -38,22 +38,25 @@ void UMBR_AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	// Checks if Health attribute was affected
 	if (
 		Data.EvaluatedData.Attribute.GetUProperty() ==
-		FindFieldChecked<UProperty>(UMBR_AttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UMBR_AttributeSet, Health))
+		FindFieldChecked<FProperty>(UMBR_AttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UMBR_AttributeSet, Health))
 		)
 	{
 		Health.SetCurrentValue(FMath::Clamp(Health.GetCurrentValue(), 0.f, MaxHealth.GetCurrentValue()));
 		Health.SetBaseValue(FMath::Clamp(Health.GetBaseValue(), 0.f, MaxHealth.GetCurrentValue()));
 		OnHealthChanged.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue());
+
+		//UE_LOG(LogTemp, Warning, TEXT("%s Health: %f"), *GetOwningActor()->GetName(), Health.GetCurrentValue());
 	}
 	// Checks if Mana attribute was affected
 	else if (
 		Data.EvaluatedData.Attribute.GetUProperty() ==
-		FindFieldChecked<UProperty>(UMBR_AttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UMBR_AttributeSet, Mana))
+		FindFieldChecked<FProperty>(UMBR_AttributeSet::StaticClass(), GET_MEMBER_NAME_CHECKED(UMBR_AttributeSet, Mana))
 		)
 	{
 		Mana.SetCurrentValue(FMath::Clamp(Mana.GetCurrentValue(), 0.f, MaxMana.GetCurrentValue()));
 		Mana.SetBaseValue(FMath::Clamp(Mana.GetBaseValue(), 0.f, MaxMana.GetCurrentValue()));
 		OnManaChanged.Broadcast(Mana.GetCurrentValue(), MaxMana.GetCurrentValue());
+		//UE_LOG(LogTemp, Warning, TEXT("%s Mana: %f"), *GetOwningActor()->GetName(), Mana.GetCurrentValue());
 	}
 }
 
