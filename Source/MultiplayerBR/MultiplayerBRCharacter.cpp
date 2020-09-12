@@ -59,6 +59,17 @@ AMultiplayerBRCharacter::AMultiplayerBRCharacter()
 }
 
 //=====================================================================================================================
+void AMultiplayerBRCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RefreshAbilityActorInfo();
+	}
+}
+
+//=====================================================================================================================
 void AMultiplayerBRCharacter::BeginPlay()
 {
 	Super::BeginPlay();

@@ -4,6 +4,7 @@
 #include "MBR_AttributeSet.h"
 #include "GameplayEffect.h"
 #include "GameplayEffectExtension.h"
+#include <Net/UnrealNetwork.h>
 
 //=====================================================================================================================
 UMBR_AttributeSet::UMBR_AttributeSet()
@@ -61,6 +62,16 @@ void UMBR_AttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 }
 
 //=====================================================================================================================
+void UMBR_AttributeSet::GetLifetimeReplicatedProps(TArray< class FLifetimeProperty >& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION_NOTIFY(UMBR_AttributeSet, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UMBR_AttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UMBR_AttributeSet, Mana, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UMBR_AttributeSet, MaxMana, COND_None, REPNOTIFY_Always);
+}
+
+//=====================================================================================================================
 void UMBR_AttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
 {
 	UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent();
@@ -73,4 +84,40 @@ void UMBR_AttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& Affe
 
 		AbilityComp->ApplyModToAttributeUnsafe(AffectedAttributeProperty, EGameplayModOp::Additive, NewDelta);
 	}
+}
+
+//=====================================================================================================================
+void UMBR_AttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UMBR_AttributeSet, Health, OldHealth);
+}
+
+//=====================================================================================================================
+void UMBR_AttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UMBR_AttributeSet, MaxHealth, OldMaxHealth);
+}
+
+//=====================================================================================================================
+void UMBR_AttributeSet::OnRep_Mana(const FGameplayAttributeData& OldMana)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UMBR_AttributeSet, Mana, OldMana);
+}
+
+//=====================================================================================================================
+void UMBR_AttributeSet::OnRep_MaxMana(const FGameplayAttributeData& OldMaxMana)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UMBR_AttributeSet, MaxMana, OldMaxMana);
+}
+
+//=====================================================================================================================
+void UMBR_AttributeSet::OnRep_HealthRegen(const FGameplayAttributeData& OldHealthRegen)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UMBR_AttributeSet, HealthRegen, OldHealthRegen);
+}
+
+//=====================================================================================================================
+void UMBR_AttributeSet::OnRep_ManaRegen(const FGameplayAttributeData& OldManaRegen)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UMBR_AttributeSet, ManaRegen, OldManaRegen);
 }
