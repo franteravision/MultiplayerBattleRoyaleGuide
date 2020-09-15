@@ -59,6 +59,17 @@ AMultiplayerBRCharacter::AMultiplayerBRCharacter()
 }
 
 //=====================================================================================================================
+void AMultiplayerBRCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RefreshAbilityActorInfo();
+	}
+}
+
+//=====================================================================================================================
 void AMultiplayerBRCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -70,9 +81,11 @@ void AMultiplayerBRCharacter::BeginPlay()
 			if (IsValid(currentAbility))
 			{
 				UMBR_GameplayAbility* defaultObj = currentAbility->GetDefaultObject<UMBR_GameplayAbility>();
+				FGameplayAbilitySpec abilitySpec = FGameplayAbilitySpec(defaultObj, 1, static_cast<int32>(defaultObj->AbilityInputID), this);
 				AbilitySystemComponent->GiveAbility(
-					FGameplayAbilitySpec(defaultObj, 1, static_cast<int32>(defaultObj->AbilityInputID), this)
+					abilitySpec
 				);
+
 			}
 		}
 
