@@ -9,6 +9,7 @@
 class UProjectileMovementComponent;
 class USphereComponent;
 class UStaticMeshComponent;
+class AMultiplayerBRCharacter;
 
 UCLASS()
 class MULTIPLAYERBR_API AMBR_Projectile : public AActor
@@ -30,6 +31,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	UParticleSystemComponent* ParticleSystemComponent;
+
+	UFUNCTION(NetMulticast, WithValidation, Reliable)
+	void Multicast_IgnoreActor(AMultiplayerBRCharacter* ActorToIgnore);
 
 protected:
 	// Called when the game starts or when spawned

@@ -5,12 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayEffectTypes.h"
 #include "MultiplayerBRCharacter.generated.h"
 
 class UGameplayAbility;
 class UAbilitySystemComponent;
 class UMBR_AttributeSet;
 class UMBR_GameplayAbility;
+class UGameplayEffect;
 
 UCLASS(config=Game)
 class AMultiplayerBRCharacter : public ACharacter, public IAbilitySystemInterface
@@ -79,6 +81,8 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	bool IsInputBound;
+
 	/* --- Gameplay Ability System Start --- */
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gameplay Ability System")
@@ -93,6 +97,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Gameplay Abilities")
 	TArray<TSubclassOf<UMBR_GameplayAbility>> StartingAbilities;
 
+	UPROPERTY(EditAnywhere, Category = "Gameplay Abilities")
+	TArray<TSubclassOf<UGameplayEffect>> StartingEffects;
+
+	void SetupGASInputs();
+
+	void SetupAbilities();
+
+	bool AbilititesGiven;
+
+	void SetupEffects();
+
+	bool EffectsGiven;
+
 	/* --- Gameplay Ability System End --- */
+
+	virtual void Die();
+
+	virtual void OnRep_PlayerState() override;
 };
 

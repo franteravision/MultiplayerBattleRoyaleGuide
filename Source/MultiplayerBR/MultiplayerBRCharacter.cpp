@@ -11,6 +11,8 @@
 #include "AbilitySystemComponent.h"
 #include "MBR_AttributeSet.h"
 #include "MBR_GameplayAbility.h"
+#include "MBR_PlayerState.h"
+#include "MBR_PlayerController.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -50,12 +52,8 @@ AMultiplayerBRCharacter::AMultiplayerBRCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("Ability System Component"));
-	AbilitySystemComponent->SetIsReplicated(true);
-	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
-
-	AttributeSet = CreateDefaultSubobject<UMBR_AttributeSet>(TEXT("Attribute Set"));
-
+	IsInputBound = false;
+	AIControllerClass = AMBR_PlayerController::StaticClass();
 }
 
 //=====================================================================================================================
@@ -63,9 +61,15 @@ void AMultiplayerBRCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if (AbilitySystemComponent)
+	AMBR_PlayerState* playerState = GetPlayerState<AMBR_PlayerState>();
+	if (IsValid(playerState))
 	{
-		AbilitySystemComponent->RefreshAbilityActorInfo();
+		AbilitySystemComponent = playerState->GetAbilitySystemComponent();
+		playerState->GetAbilitySystemComponent()->InitAbilityActorInfo(playerState, this);
+		AttributeSet = playerState->GetAttributeSet();
+
+		SetupAbilities();
+		SetupEffects();
 	}
 }
 
@@ -73,24 +77,6 @@ void AMultiplayerBRCharacter::PossessedBy(AController* NewController)
 void AMultiplayerBRCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (GetLocalRole() == ROLE_Authority && IsValid(AbilitySystemComponent))
-	{
-		for (TSubclassOf<UMBR_GameplayAbility>& currentAbility : StartingAbilities)
-		{
-			if (IsValid(currentAbility))
-			{
-				UMBR_GameplayAbility* defaultObj = currentAbility->GetDefaultObject<UMBR_GameplayAbility>();
-				FGameplayAbilitySpec abilitySpec = FGameplayAbilitySpec(defaultObj, 1, static_cast<int32>(defaultObj->AbilityInputID), this);
-				AbilitySystemComponent->GiveAbility(
-					abilitySpec
-				);
-
-			}
-		}
-
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -98,8 +84,8 @@ void AMultiplayerBRCharacter::BeginPlay()
 
 void AMultiplayerBRCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	// Set up gameplay key bindings
-	check(PlayerInputComponent);
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
@@ -114,29 +100,103 @@ void AMultiplayerBRCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AMultiplayerBRCharacter::LookUpAtRate);
 
-	// handle touch devices
-	PlayerInputComponent->BindTouch(IE_Pressed, this, &AMultiplayerBRCharacter::TouchStarted);
-	PlayerInputComponent->BindTouch(IE_Released, this, &AMultiplayerBRCharacter::TouchStopped);
-
-	// VR headset functionality
-	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMultiplayerBRCharacter::OnResetVR);
-
-	// set up ASC input bindings
-	AbilitySystemComponent->BindAbilityActivationToInputComponent(
-		PlayerInputComponent,
-		FGameplayAbilityInputBinds(
-			"Confirm",
-			"Cancel",
-			"EMBR_AbilityInputID",
-			static_cast<int32>(EMBR_AbilityInputID::Confirm),
-			static_cast<int32>(EMBR_AbilityInputID::Cancel)
-		));
+	// set up ASC input bindings -- also done on OnRep_PlayerState for races
+	SetupGASInputs();
 }
 
 //=====================================================================================================================
 UAbilitySystemComponent* AMultiplayerBRCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::SetupGASInputs()
+{
+	if (!IsInputBound && IsValid(AbilitySystemComponent) && IsValid(InputComponent))
+	{
+		AbilitySystemComponent->BindAbilityActivationToInputComponent(
+			InputComponent,
+			FGameplayAbilityInputBinds(
+				FString("Confirm"),
+				FString("Cancel"),
+				FString("EMBR_AbilityInputID"),
+				static_cast<int32>(EMBR_AbilityInputID::Confirm),
+				static_cast<int32>(EMBR_AbilityInputID::Cancel)
+			));
+
+		IsInputBound = true;
+	}
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::SetupAbilities()
+{
+	if (GetLocalRole() != ROLE_Authority || !IsValid(AbilitySystemComponent) || AbilititesGiven)
+	{
+		return;
+	}
+
+	for (TSubclassOf<UMBR_GameplayAbility>& currentAbility : StartingAbilities)
+	{
+		if (IsValid(currentAbility))
+		{
+			UMBR_GameplayAbility* defaultObj = currentAbility->GetDefaultObject<UMBR_GameplayAbility>();
+			FGameplayAbilitySpec abilitySpec = FGameplayAbilitySpec(defaultObj, 1, static_cast<int32>(defaultObj->AbilityInputID), this);
+			AbilitySystemComponent->GiveAbility(
+				abilitySpec
+			);
+		}
+	}
+
+	AbilititesGiven = true;
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::SetupEffects()
+{
+	if (GetLocalRole() != ROLE_Authority || !IsValid(AbilitySystemComponent) || EffectsGiven)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle effectContext = AbilitySystemComponent->MakeEffectContext();
+	effectContext.AddSourceObject(this);
+
+	for (TSubclassOf<UGameplayEffect> GameplayEffect : StartingEffects)
+	{
+		FGameplayEffectSpecHandle newHandle = AbilitySystemComponent->MakeOutgoingSpec(GameplayEffect, 1.f, effectContext);
+		if (newHandle.IsValid())
+		{
+			FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*newHandle.Data.Get(), GetAbilitySystemComponent());
+		}
+	}
+
+	EffectsGiven = true;
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::Die()
+{
+
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	AMBR_PlayerState* playerState = GetPlayerState<AMBR_PlayerState>();
+	if (IsValid(playerState))
+	{
+		AbilitySystemComponent = playerState->GetAbilitySystemComponent();
+		
+		GetAbilitySystemComponent()->InitAbilityActorInfo(playerState, this);
+		
+		AttributeSet = playerState->GetAttributeSet();
+
+		SetupGASInputs();
+	}
 }
 
 //=====================================================================================================================

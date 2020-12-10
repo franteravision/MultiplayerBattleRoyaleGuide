@@ -5,6 +5,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "MultiplayerBR/MultiplayerBRCharacter.h"
 
 // Sets default values
 AMBR_Projectile::AMBR_Projectile()
@@ -21,6 +22,17 @@ AMBR_Projectile::AMBR_Projectile()
 	ParticleSystemComponent->SetupAttachment(RootComponent);
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(FName("ProjectileMovement"));
+}
+
+
+bool AMBR_Projectile::Multicast_IgnoreActor_Validate(AMultiplayerBRCharacter* ActorToIgnore)
+{
+	return true;
+}
+
+void AMBR_Projectile::Multicast_IgnoreActor_Implementation(AMultiplayerBRCharacter* ActorToIgnore)
+{
+	SphereComponent->IgnoreActorWhenMoving(ActorToIgnore, true);
 }
 
 // Called when the game starts or when spawned
