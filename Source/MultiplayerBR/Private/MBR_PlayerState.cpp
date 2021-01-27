@@ -18,6 +18,9 @@ AMBR_PlayerState::AMBR_PlayerState()
 	AttributeSet = CreateDefaultSubobject<UMBR_AttributeSet>(TEXT("Attribute Set"));
 
 	NetUpdateFrequency = 100.f;
+
+	KillCount = 0;
+	DeadTag = FGameplayTag::RequestGameplayTag(FName("MBR.State.Dead"));
 }
 
 //=====================================================================================================================
@@ -71,14 +74,26 @@ void AMBR_PlayerState::BeginPlay()
 //=====================================================================================================================
 void AMBR_PlayerState::OnHealthChanged(const FOnAttributeChangeData& Data)
 {
-	//AActor* killerActor = Data.GEModData->EffectSpec.GetEffectContext().GetEffectCauser();
-	//UE_LOG(LogTemp, Warning, TEXT("AMBR_PlayerState::OnHealthChanged: %s"), *UKismetSystemLibrary::GetDisplayName(killerActor));
-	if (!IsAlive() && IsValid(AbilitySystemComponent))
+	if (!IsAlive() && IsValid(AbilitySystemComponent) && GetLocalRole() == ROLE_Authority && !AbilitySystemComponent->HasMatchingGameplayTag(DeadTag))
 	{
 		AMultiplayerBRCharacter* characterRef = Cast<AMultiplayerBRCharacter>(GetPawn());
 		if (IsValid(characterRef))
 		{
-			characterRef->Die();
+			AActor* killerActor = Data.GEModData->EffectSpec.GetEffectContext().GetEffectCauser();
+			if(IsValid(killerActor))
+			{
+				AMultiplayerBRCharacter* KillerCharacter = Cast<AMultiplayerBRCharacter>(killerActor);
+				if (IsValid(KillerCharacter))
+				{
+					characterRef->Server_Die(KillerCharacter);
+				}
+			}
 		}
 	}
+}
+
+//=====================================================================================================================
+void AMBR_PlayerState::ScoreKill()
+{
+	KillCount++;
 }

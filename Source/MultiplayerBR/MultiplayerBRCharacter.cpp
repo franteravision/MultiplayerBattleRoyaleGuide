@@ -13,7 +13,7 @@
 #include "MBR_GameplayAbility.h"
 #include "MBR_PlayerState.h"
 #include "MBR_PlayerController.h"
-
+#include "MultiplayerBRGameMode.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiplayerBRCharacter
@@ -54,6 +54,7 @@ AMultiplayerBRCharacter::AMultiplayerBRCharacter()
 
 	IsInputBound = false;
 	AIControllerClass = AMBR_PlayerController::StaticClass();
+	IsDying = false;
 }
 
 //=====================================================================================================================
@@ -176,9 +177,44 @@ void AMultiplayerBRCharacter::SetupEffects()
 }
 
 //=====================================================================================================================
-void AMultiplayerBRCharacter::Die()
+void AMultiplayerBRCharacter::Server_Die_Implementation(AMultiplayerBRCharacter* Killer)
 {
+	if (IsDying)
+	{
+		return;
+	}
 
+	IsDying = true;
+
+	if (IsValid(DeadEffectClass))
+	{
+		FGameplayEffectContextHandle EffectContext;
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(DeadEffectClass->GetDefaultObject<UGameplayEffect>(), 1.0f, EffectContext);
+	}
+
+	AMBR_PlayerState* killerPlayerState = Cast<AMBR_PlayerState>(Killer->GetPlayerState());
+	if (IsValid(killerPlayerState))
+	{
+		killerPlayerState->ScoreKill();
+	}
+
+	AMultiplayerBRGameMode* GameMode = Cast<AMultiplayerBRGameMode>(GetWorld()->GetAuthGameMode());
+	GameMode->PlayerKilled(Killer->GetController(), GetController());
+
+	Multicast_OnDeath();
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::Multicast_OnDeath_Implementation()
+{
+	if (DeathMontage)
+	{
+		PlayAnimMontage(DeathMontage);
+	}
+	else
+	{
+		Destroy();
+	}
 }
 
 //=====================================================================================================================

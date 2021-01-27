@@ -13,6 +13,10 @@ class AMultiplayerBRGameMode : public AGameModeBase
 
 public:
 	AMultiplayerBRGameMode();
+
+	void CheckForPlayersAlive();
+
+	void PlayerKilled(AController* KilllerController, AController* VictimController);
 };
 
 

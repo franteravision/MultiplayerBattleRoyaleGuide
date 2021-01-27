@@ -16,4 +16,13 @@ class MULTIPLAYERBR_API AMBR_PlayerController : public APlayerController
 	
 public:
 	virtual void OnPossess(APawn* InPawn) override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_GameConclussion(bool WasSuccesful);
+
+	UFUNCTION()
+	void GameConclussion(bool WasSuccesful);
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AActor> SpectatingActorClass;
 };
