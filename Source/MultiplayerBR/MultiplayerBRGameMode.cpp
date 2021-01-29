@@ -6,6 +6,10 @@
 #include "MBR_PlayerState.h"
 #include "MBR_GameState.h"
 #include "MBR_PlayerController.h"
+#include "GameFramework/PlayerStart.h"
+#include "EngineUtils.h"
+#include "MBR_Spawner.h"
+#include "MBR_Collectable.h"
 
 AMultiplayerBRGameMode::AMultiplayerBRGameMode()
 {
@@ -15,6 +19,15 @@ AMultiplayerBRGameMode::AMultiplayerBRGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+}
+
+//=====================================================================================================================
+void AMultiplayerBRGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitPlayerStarts();
+	SetupWorldSpawners();
 }
 
 //=====================================================================================================================
@@ -38,4 +51,51 @@ void AMultiplayerBRGameMode::PlayerKilled(AController* KilllerController, AContr
 		WorldGameState->CheckWinCondition();
 	}
 
+}
+
+//=====================================================================================================================
+void AMultiplayerBRGameMode::InitPlayerStarts()
+{
+	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+	{
+		APlayerStart* CurrentPlayerStart = *It;
+		if (IsValid(CurrentPlayerStart))
+		{
+			WorldPlayerStarts.Add(CurrentPlayerStart);
+		}
+	}
+}
+
+//=====================================================================================================================
+void AMultiplayerBRGameMode::SetupWorldSpawners()
+{
+	int CollectableIndex = 0;
+	for (TActorIterator<AMBR_Spawner> It(GetWorld()); It; ++It)
+	{
+		AMBR_Spawner* CurrentSpawner = *It;
+		CurrentSpawner->SetCollectableSubclass(SpawnableCollectables[CollectableIndex % SpawnableCollectables.Num()]);
+		CurrentSpawner->RespawnCollectable();
+		CollectableIndex++;
+	}
+}
+
+//=====================================================================================================================
+AActor* AMultiplayerBRGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+	APlayerStart* BestStart = nullptr;
+	int32 RandomIndex = FMath::RandHelper(WorldPlayerStarts.Num() - 1);
+	if(RandomIndex >= 0)
+	{
+		BestStart = WorldPlayerStarts[RandomIndex];
+		WorldPlayerStarts.RemoveAt(RandomIndex);
+	}
+	
+	if(IsValid(BestStart))
+	{
+		return BestStart;
+	}
+	else
+	{
+		return Super::ChoosePlayerStart_Implementation(Player);
+	}
 }
