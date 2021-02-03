@@ -84,7 +84,7 @@ AActor* AMultiplayerBRGameMode::ChoosePlayerStart_Implementation(AController* Pl
 {
 	APlayerStart* BestStart = nullptr;
 	int32 RandomIndex = FMath::RandHelper(WorldPlayerStarts.Num() - 1);
-	if(RandomIndex >= 0)
+	if(RandomIndex >= 0 && WorldPlayerStarts.Num() > 0)
 	{
 		BestStart = WorldPlayerStarts[RandomIndex];
 		WorldPlayerStarts.RemoveAt(RandomIndex);
