@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -8,6 +8,19 @@ public class MultiplayerBR : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "GameplayAbilities", "GameplayTags", "GameplayTasks", "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay" });
+		PublicDependencyModuleNames.AddRange(new string[] 
+			{
+				"GameplayAbilities",
+				"GameplayTags",
+				"GameplayTasks",
+				"Core",
+				"CoreUObject",
+				"Engine",
+				"InputCore",
+				"HeadMountedDisplay",
+                "OnlineSubsystem",
+                "﻿OnlineSubsystemSteam﻿",
+            }
+		);
 	}
 }
