@@ -19,7 +19,7 @@ public class MultiplayerBR : ModuleRules
 				"InputCore",
 				"HeadMountedDisplay",
                 "OnlineSubsystem",
-                "﻿OnlineSubsystemSteam﻿",
+                "﻿OnlineSubsystemSteam﻿"
             }
 		);
 	}
