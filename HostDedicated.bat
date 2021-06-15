@@ -1,0 +1,1 @@
+"C:\Program Files\Epic Games\UE_4.25\Engine\Binaries\Win64\UE4Editor.exe" "C:\Users\Administrador\Documents\Reps\MultiplayerBattleRoyale\MultiplayerBR.uproject" BattleRoyaleMap -server -log -nosteam -advertiseaddress=127.0.0.1 -port=1234

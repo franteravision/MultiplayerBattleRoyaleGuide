@@ -35,7 +35,7 @@ public:
 	TArray<TSubclassOf<AMBR_Collectable>> SpawnableCollectables;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<AMBR_Collectable> SpawnerSubclass;
+	TSubclassOf<AMBR_Spawner> SpawnerSubclass;
 };
 
 

@@ -93,7 +93,7 @@ void UMBR_GameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 		UWorld* World = GetWorld();
 		if (World)
 		{
-			World->ServerTravel("/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap?listen");
+			World->ServerTravel("/Game/ThirdPersonCPP/Maps/LobbyMap?listen");
 		}
 	}
 }
