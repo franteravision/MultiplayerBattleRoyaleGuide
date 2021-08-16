@@ -14,6 +14,8 @@ class UMBR_AttributeSet;
 class UMBR_GameplayAbility;
 class UGameplayEffect;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnResourcePercentChanged, float, Percent);
+
 UCLASS(config=Game)
 class AMultiplayerBRCharacter : public ACharacter, public IAbilitySystemInterface
 {
@@ -30,6 +32,12 @@ class AMultiplayerBRCharacter : public ACharacter, public IAbilitySystemInterfac
 	virtual void BeginPlay() override;
 public:
 	AMultiplayerBRCharacter();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnResourcePercentChanged OnHealthPercentChangedDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnResourcePercentChanged OnManaPercentChangedDelegate;
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
@@ -129,6 +137,18 @@ public:
 	virtual void Multicast_OnDeath();
 
 	virtual void OnRep_PlayerState() override;
+
+	UFUNCTION()
+	void HealthPercentageChanged(float Health, float MaxHealth);
+
+	UFUNCTION(Client, Reliable)
+	void Client_HealthPercentageChanged(float Health, float MaxHealth);
+
+	UFUNCTION()
+	void ManaPercentageChanged(float Mana, float MaxMana);
+
+	UFUNCTION(Client, Reliable)
+	void Client_ManaPercentageChanged(float Mana, float MaxMana);
 
 	/* --- Win Condition Start --- */
 };

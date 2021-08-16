@@ -68,7 +68,8 @@ void AMultiplayerBRCharacter::PossessedBy(AController* NewController)
 		AbilitySystemComponent = playerState->GetAbilitySystemComponent();
 		playerState->GetAbilitySystemComponent()->InitAbilityActorInfo(playerState, this);
 		AttributeSet = playerState->GetAttributeSet();
-
+		AttributeSet->OnHealthChanged.AddDynamic(this, &AMultiplayerBRCharacter::HealthPercentageChanged);
+		AttributeSet->OnManaChanged.AddDynamic(this, &AMultiplayerBRCharacter::ManaPercentageChanged);
 		SetupAbilities();
 		SetupEffects();
 	}
@@ -230,9 +231,34 @@ void AMultiplayerBRCharacter::OnRep_PlayerState()
 		GetAbilitySystemComponent()->InitAbilityActorInfo(playerState, this);
 		
 		AttributeSet = playerState->GetAttributeSet();
-
+		AttributeSet->OnHealthChanged.AddDynamic(this, &AMultiplayerBRCharacter::HealthPercentageChanged);
+		AttributeSet->OnManaChanged.AddDynamic(this, &AMultiplayerBRCharacter::ManaPercentageChanged);
 		SetupGASInputs();
 	}
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::HealthPercentageChanged(float Health, float MaxHealth)
+{
+	Client_HealthPercentageChanged(Health, MaxHealth);
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::Client_HealthPercentageChanged_Implementation(float Health, float MaxHealth)
+{
+	OnHealthPercentChangedDelegate.Broadcast(Health/MaxHealth);
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::ManaPercentageChanged(float Mana, float MaxMana)
+{
+	Client_ManaPercentageChanged(Mana, MaxMana);
+}
+
+//=====================================================================================================================
+void AMultiplayerBRCharacter::Client_ManaPercentageChanged_Implementation(float Mana, float MaxMana)
+{
+	OnManaPercentChangedDelegate.Broadcast(Mana/MaxMana);
 }
 
 //=====================================================================================================================
